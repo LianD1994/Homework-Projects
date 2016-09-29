@@ -1,22 +1,23 @@
 package view;
 
+import java.io.Serializable;
+
 /**
  * Created by Lian on 9/27/16.
  */
-public class Song {
+public class Song implements Serializable{
 
-    public String name, artist, album;
-    public int year;
+    public String name, artist, album, year;
 
     public Song(){
 
-        this.name = "empty";
-        this.artist = "empty";
-        this.album = " ";
-        this.year = 0;
+        this.name = "";
+        this.artist = "";
+        this.album = "";
+        this.year = "";
     }
 
-    public Song(String name, String artist, String album, int year){
+    public Song(String name, String artist, String album, String year){
 
         this.name = name;
         this.artist = artist;
@@ -36,7 +37,7 @@ public class Song {
         return album;
     }
 
-    public int getYear(){
+    public String getYear(){
         return year;
     }
 
@@ -52,7 +53,7 @@ public class Song {
         this.album = album;
     }
 
-    public void setYear(int year){
+    public void setYear(String year){
         this.year = year;
     }
 }

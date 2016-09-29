@@ -11,13 +11,13 @@ import javafx.stage.Stage;
 import java.io.*;
 import java.util.*;
 
-public class Controller {
+public class Controller implements Serializable {
 
     @FXML ListView<String> listView;// ListView for song library display
-    private ObservableList<String> songList;
+    ObservableList<String> songList;
 
     @FXML TableView<Song> tableView;// tableView for song detail display
-    private ObservableList<Song> detailList;
+    ArrayList<Song> detailList = new ArrayList<>();
 
     @FXML TableColumn<Song, String> nameColumn;
     @FXML TableColumn<Song, String> artistColumn;
@@ -29,7 +29,7 @@ public class Controller {
     @FXML TextField albumInput;
     @FXML TextField yearInput;
 
-    public void start(Stage mainStage) throws FileNotFoundException {
+    public void start(Stage mainStage) throws IOException, ClassNotFoundException {
 
         // Scan the song list file
         File songListFile = new File("src/view/songListFile.txt");
@@ -38,7 +38,6 @@ public class Controller {
 
         // create an ObservableList from an ArrayList
         songList = FXCollections.observableArrayList();
-        detailList = FXCollections.observableArrayList();
 
         // set Column cell value
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -46,20 +45,24 @@ public class Controller {
         albumColumn.setCellValueFactory(new PropertyValueFactory<>("album"));
         yearColumn.setCellValueFactory(new PropertyValueFactory<>("year"));
 
-        // set items for the song list and detail list
+        // set items for the song list
         listView.setItems(songList);
 
-        // Add the song in the txt file to the lists
+        // Read the song in the txt file, add them to songList
         while(s.hasNextLine()){
             line = s.nextLine();
-            Song song = new Song(line, "adc", "asd", 1);
-            songList.add(song.name);
-            detailList.add(song);
+            songList.add(line);
         }
-
         s.close();
 
-        // TODO: output the song list to a txt file
+        // Sort the list after reading it from file
+        Collections.sort(songList);
+
+        // Read song Object list from file, add it to detailList
+        FileInputStream fis = new FileInputStream("src/view/detailListFile.tmp");
+        ObjectInputStream ois = new ObjectInputStream(fis);
+        detailList = (ArrayList<Song>) ois.readObject();
+        ois.close();
 
         // set listener for the items
         listView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> displaySongDetail());
@@ -94,7 +97,9 @@ public class Controller {
         int i = 0;
         while( i< detailList.size() ){
             String name = detailList.get(i).name;
-            if(name.equals(songName)){
+            String artist = detailList.get(i).artist;
+
+            if(name.equals(songName)){// TODO: SAME SONG NAME DIFFERENT ARTIST
                 displayList.add(detailList.get(i));
                 tableView.setItems(displayList);
             }
@@ -103,13 +108,14 @@ public class Controller {
     }
 
     @FXML
-    private void onAddButtonClicked(){// TODO: Add the song user entered to the list
+    private void onAddButtonClicked() throws IOException {
 
         Song addSong = new Song();
+
         addSong.setName(nameInput.getText());
         addSong.setArtist(artistInput.getText());
         addSong.setAlbum(albumInput.getText());
-        addSong.setYear(Integer.parseInt(yearInput.getText()));
+        addSong.setYear(yearInput.getText());
 
         // add the song name to the song list, add the song to the detailed list
         songList.add(addSong.name);
@@ -124,32 +130,94 @@ public class Controller {
         // Sort the song list
         Collections.sort(songList);
 
-        // TODO: ALERT IF SONG ALREADY EXIST
+        // Write songList to a file
+        PrintWriter w = new PrintWriter("src/view/songListFile.txt");
+        int i = 0;
+        while(i < songList.size()){
+            w.println(songList.get(i));
+            i++;
+        }
+        w.close();
+
+        // Write detailList to a file
+        FileOutputStream fos = new FileOutputStream("src/view/detailListFile.tmp");
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(detailList);
+        oos.close();
+
+        // Select the newly added song
+        for(i=0;i<songList.size();i++){
+            if(songList.get(i).equals(addSong.name)){
+                listView.getSelectionModel().select(i);
+                break;
+            }
+        }
     }
 
     @FXML
-    private void onDeleteButtonClicked(){
+    private void onDeleteButtonClicked() throws IOException {
         String removeSong = listView.getSelectionModel().selectedItemProperty().getValue();
+
+        // Remove the song name from songList
         songList.remove(removeSong);
-        detailList.remove(removeSong);
+
+        // Remove the song object from detailList
+        int j = 0;
+        while(j < detailList.size()){
+            if(detailList.get(j).name.equals(removeSong)){
+                detailList.remove(detailList.get(j));
+            }
+            j++;
+        }
+
+        // Sort the song list
+        Collections.sort(songList);
+
+        // Write the songList to the file after deletion
+        PrintWriter w = new PrintWriter("src/view/songListFile.txt");
+        int i = 0;
+        while(i < songList.size()){
+            w.println(songList.get(i));
+            i++;
+        }
+        w.close();
+
+        // Write the detailList to the file after deletion
+        FileOutputStream fos = new FileOutputStream("src/view/detailListFile.tmp");
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(detailList);
+        oos.close();
     }
 
     @FXML
-    private void onEditButtonClicked(){
+    private void onEditButtonClicked() throws FileNotFoundException {
         String editSong = listView.getSelectionModel().selectedItemProperty().getValue();
-        songList.remove(editSong);
-        songList.add(nameInput.getText());
 
+        // If name entered by user is not empty, then replace with new name
+        // else leave name as it is
+        if(! nameInput.getText().equals("")) {
+            songList.remove(editSong);
+            songList.add(nameInput.getText());
+        }
+
+        // Set the property to new value if not empty
         int i = 0;
         while(i < detailList.size()){
             if(editSong.equals(detailList.get(i).name)){
-                detailList.get(i).setName(nameInput.getText());
-                detailList.get(i).setAlbum(albumInput.getText());
-                detailList.get(i).setArtist(artistInput.getText());
-                detailList.get(i).setYear(Integer.parseInt(yearInput.getText()));
+                if( ! nameInput.getText().equals("")) {
+                    detailList.get(i).setName(nameInput.getText());
+                }
+                if( ! albumInput.getText().equals("")) {
+                    detailList.get(i).setAlbum(albumInput.getText());
+                }
+                if( ! artistInput.getText().equals("")) {
+                    detailList.get(i).setArtist(artistInput.getText());
+                }
+                if( ! yearInput.getText().equals("")) {
+                    detailList.get(i).setYear(yearInput.getText());
+                }
                 break;
             }
-
             i++;
         }
 
@@ -161,6 +229,15 @@ public class Controller {
 
         // Sort the list
         Collections.sort(songList);
+
+        // Write the list to the file after deletion
+        PrintWriter w = new PrintWriter("src/view/songListFile.txt");
+        i = 0;
+        while(i < songList.size()){
+            w.println(songList.get(i));
+            i++;
+        }
+        w.close();
     }
 }
 
