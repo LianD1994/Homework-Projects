@@ -120,14 +120,47 @@ public class Controller {
         artistInput.clear();
         albumInput.clear();
         yearInput.clear();
+
+        // Sort the song list
+        Collections.sort(songList);
+
+        // TODO: ALERT IF SONG ALREADY EXIST
     }
 
     @FXML
     private void onDeleteButtonClicked(){
         String removeSong = listView.getSelectionModel().selectedItemProperty().getValue();
-        System.out.println(removeSong);
         songList.remove(removeSong);
         detailList.remove(removeSong);
+    }
+
+    @FXML
+    private void onEditButtonClicked(){
+        String editSong = listView.getSelectionModel().selectedItemProperty().getValue();
+        songList.remove(editSong);
+        songList.add(nameInput.getText());
+
+        int i = 0;
+        while(i < detailList.size()){
+            if(editSong.equals(detailList.get(i).name)){
+                detailList.get(i).setName(nameInput.getText());
+                detailList.get(i).setAlbum(albumInput.getText());
+                detailList.get(i).setArtist(artistInput.getText());
+                detailList.get(i).setYear(Integer.parseInt(yearInput.getText()));
+                break;
+            }
+
+            i++;
+        }
+
+        // Clear the input field
+        nameInput.clear();
+        artistInput.clear();
+        albumInput.clear();
+        yearInput.clear();
+
+        // Sort the list
+        Collections.sort(songList);
     }
 }
 

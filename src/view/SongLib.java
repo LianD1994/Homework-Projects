@@ -28,7 +28,6 @@ public class SongLib extends Application {
         launch(args);
     }
 
-
 }
 
 
