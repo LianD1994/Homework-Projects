@@ -15,6 +15,7 @@ public class Controller implements Serializable {
 
     @FXML ListView<String> listView;// ListView for song library display
     ObservableList<String> songList;
+    ObservableList<Song> displayList;
 
     @FXML TableView<Song> tableView;// tableView for song detail display
     ArrayList<Song> detailList = new ArrayList<>();
@@ -38,6 +39,7 @@ public class Controller implements Serializable {
 
         // create an ObservableList from an ArrayList
         songList = FXCollections.observableArrayList();
+        displayList = FXCollections.observableArrayList();
 
         // set Column cell value
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
@@ -47,8 +49,9 @@ public class Controller implements Serializable {
 
         // set items for the song list
         listView.setItems(songList);
+        tableView.setItems(displayList);
 
-        // Read the song in the txt file, add them to songList
+        // Read the song from the txt file, add them to songList
         while(s.hasNextLine()){
             line = s.nextLine();
             songList.add(line);
@@ -64,11 +67,19 @@ public class Controller implements Serializable {
         detailList = (ArrayList<Song>) ois.readObject();
         ois.close();
 
+        // TODO==============================================
+        for(int j=0;j<detailList.size();j++){
+            System.out.println("detailList: " + detailList.get(j).name);
+        }
+
         // set listener for the items
         listView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> displaySongDetail());
 
         // Set the first song to be selected by default
         listView.getSelectionModel().select(0);
+
+
+        // TODO==============================
     }
 
     // Example from ppt
@@ -91,27 +102,44 @@ public class Controller implements Serializable {
         // Selected song name
         String songName = listView.getSelectionModel().selectedItemProperty().getValue();
 
-        // ObservableList for displaying info
-        ObservableList<Song> displayList = FXCollections.observableArrayList();
+        // Get the number of appearance for the song in the listView
+        int index = listView.getSelectionModel().getSelectedIndex();
+        int appearance = 0;
+        int tmp = 0;
+        while(tmp <= index){
+            if(listView.getItems().get(tmp).equals(songName)){
+                appearance++;
+            }
+            tmp++;
+        }
 
+        System.out.println(appearance);
+
+        displayList = FXCollections.observableArrayList();//todo==========================
+        int checkAppearance = 0;
         int i = 0;
         while( i< detailList.size() ){
             String name = detailList.get(i).name;
-            String artist = detailList.get(i).artist;
-
             if(name.equals(songName)){// TODO: SAME SONG NAME DIFFERENT ARTIST
-                displayList.add(detailList.get(i));
-                tableView.setItems(displayList);
+                checkAppearance++;
+                if(checkAppearance == appearance) {
+                    displayList.add(detailList.get(i));
+                    tableView.setItems(displayList);
+                }
             }
             i++;
         }
     }
 
+
+    // ON ADD BUTTON CLICKED
+    // ---------------------
     @FXML
     private void onAddButtonClicked() throws IOException {
 
         Song addSong = new Song();
 
+        // Set Song detail according to user input
         addSong.setName(nameInput.getText());
         addSong.setArtist(artistInput.getText());
         addSong.setAlbum(albumInput.getText());
@@ -154,6 +182,9 @@ public class Controller implements Serializable {
         }
     }
 
+
+    // ON DELETE BUTTON CLICKED
+    // ------------------------
     @FXML
     private void onDeleteButtonClicked() throws IOException {
         String removeSong = listView.getSelectionModel().selectedItemProperty().getValue();
@@ -166,6 +197,7 @@ public class Controller implements Serializable {
         while(j < detailList.size()){
             if(detailList.get(j).name.equals(removeSong)){
                 detailList.remove(detailList.get(j));
+                break;
             }
             j++;
         }
@@ -187,17 +219,31 @@ public class Controller implements Serializable {
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         oos.writeObject(detailList);
         oos.close();
+
+        // Clear the tableView if songList is empty
+        if(songList.size() == 0){
+            ObservableList<Song> emptyList = FXCollections.emptyObservableList();
+            tableView.setItems(emptyList);
+        }
     }
 
+
+    // ON EDIT BUTTON CLICKED
+    // ----------------------
     @FXML
-    private void onEditButtonClicked() throws FileNotFoundException {
+    private void onEditButtonClicked() throws IOException {
         String editSong = listView.getSelectionModel().selectedItemProperty().getValue();
 
         // If name entered by user is not empty, then replace with new name
         // else leave name as it is
         if(! nameInput.getText().equals("")) {
-            songList.remove(editSong);
-            songList.add(nameInput.getText());
+            int i = 0;
+            while(i<songList.size()) {
+                if(songList.get(i).equals(editSong)) {
+                    songList.set(i, nameInput.getText());
+                }
+                i++;
+            }
         }
 
         // Set the property to new value if not empty
@@ -221,11 +267,10 @@ public class Controller implements Serializable {
             i++;
         }
 
-        // Clear the input field
-        nameInput.clear();
-        artistInput.clear();
-        albumInput.clear();
-        yearInput.clear();
+        // TODO========================================
+        ObservableList<Song> displayList1 = FXCollections.observableArrayList();
+        displayList1.add(detailList.get(i));
+        tableView.setItems(displayList1);
 
         // Sort the list
         Collections.sort(songList);
@@ -238,6 +283,18 @@ public class Controller implements Serializable {
             i++;
         }
         w.close();
+
+        // Write the detailList to the file after edition
+        FileOutputStream fos = new FileOutputStream("src/view/detailListFile.tmp");
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(detailList);
+        oos.close();
+
+        // Clear the input field
+        nameInput.clear();
+        artistInput.clear();
+        albumInput.clear();
+        yearInput.clear();
     }
 }
 
