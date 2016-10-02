@@ -65,11 +65,26 @@ public class Controller implements Serializable {
         // Sort the list after reading it from file
         Collections.sort(songList);
 
-        // Read song Object list from file, add it to detailList
-        FileInputStream fis = new FileInputStream("src/view/detailListFile.tmp");
-        ObjectInputStream ois = new ObjectInputStream(fis);
-        detailList = (ArrayList<Song>) ois.readObject();
-        ois.close();
+        // Check if the file is empty to avoid Exception
+        BufferedReader bf = new BufferedReader(new FileReader("src/view/detailListFile.tmp"));
+        if (bf.readLine() != null) {
+            // Read song Object list from file, add it to detailList
+            FileInputStream fis = new FileInputStream("src/view/detailListFile.tmp");
+            ObjectInputStream ois = new ObjectInputStream(fis);
+            detailList = (ArrayList<Song>) ois.readObject();
+            ois.close();
+        }
+
+        // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
+        System.out.println();
+        System.out.println("detailList is: ");
+        for(int i=0;i<detailList.size();i++){
+            System.out.println(detailList.get(i).name);
+        }
+        System.out.println("songList is: ");
+        for(int i=0;i<detailList.size();i++){
+            System.out.println(songList.get(i));
+        }
 
         // set listener for the items
         listView.getSelectionModel().selectedItemProperty().addListener(((observable) -> displaySongDetail()));
@@ -96,8 +111,6 @@ public class Controller implements Serializable {
             tmp++;
         }
 
-
-
         displayList = FXCollections.observableArrayList();//todo==========================
         int checkAppearance = 0;
 
@@ -119,16 +132,28 @@ public class Controller implements Serializable {
     @FXML
     private void onAddButtonClicked() throws IOException {
 
+        // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
+        System.out.println();
+        System.out.println("Before adding the new song");
+        System.out.println("detailList is: ");
+        for(int i=0;i<detailList.size();i++){
+            System.out.println(detailList.get(i).name);
+        }
+        System.out.println("songList is: ");
+        for(int i=0;i<detailList.size();i++){
+            System.out.println(songList.get(i));
+        }
+
         Song addSong = new Song();
         addSong.setName(nameInput.getText());
-        previous.setName(nameInput.getText());//save the song that is being added, used for cancel later//
         addSong.setArtist(artistInput.getText());
-        previous.setArtist(artistInput.getText());
         addSong.setAlbum(albumInput.getText());
-        previous.setAlbum(albumInput.getText());
         addSong.setYear(yearInput.getText());
-        previous.setYear(yearInput.getText());
 
+        previous.setName(nameInput.getText());//save the song that is being added, used for cancel later//
+        previous.setArtist(artistInput.getText());
+        previous.setAlbum(albumInput.getText());
+        previous.setYear(yearInput.getText());
 
         for(int a=0; a<yearInput.getText().length();a++){
             if(!Character.isDigit(yearInput.getText().charAt(a))){
@@ -142,90 +167,100 @@ public class Controller implements Serializable {
             }
         }
 
+        // Check if title or artist is empty
         if(nameInput.getText().isEmpty()||artistInput.getText().isEmpty()){
             Alert alert = new Alert(AlertType.INFORMATION);
             alert.setTitle("Error");
             alert.setHeaderText(null);
             alert.setContentText("Title and artist of the song cannot be empty!");
-
             alert.showAndWait();
             return;
-        }else{
-
         }
 
-        boolean a=false; //check if this song already exists//
+
+        //check if this song already exists
+        boolean a = false;
         int j = 0;
         while(j < detailList.size()){
-            if(detailList.get(j).name.equals(nameInput.getText())&&detailList.get(j).getArtist().equals(artistInput.getText())){
-                a=true;
+            if(detailList.get(j).name.equals(nameInput.getText()) && detailList.get(j).getArtist().equals(artistInput.getText())){
+                a = true;
             }
             j++;
         }
 
-
-        if(!a){ //if the song does not exist, process to add, else pop alert screen//
-
-            // add the song name to the song list, add the song to the detailed list
-            songList.add(addSong.name);
-            detailList.add(addSong);
-
-            // Clear the input fields after song is added
-            nameInput.clear();
-            artistInput.clear();
-            albumInput.clear();
-            yearInput.clear();
-
-            // Sort the song list
-            Collections.sort(songList);
-
-            // Write songList to a file
-            PrintWriter w = new PrintWriter("src/view/songListFile.txt");
-            int i = 0;
-            while(i < songList.size()){
-                w.println(songList.get(i));
-                i++;
-            }
-            w.close();
-
-            // Write detailList to a file
-            FileOutputStream fos = new FileOutputStream("src/view/detailListFile.tmp");
-            ObjectOutputStream oos = new ObjectOutputStream(fos);
-            oos.writeObject(detailList);
-            oos.close();
-
-            // Select the newly added song
-            // Find the last appearance of the song name (in the case of adding song with same song name)
-            int appearance = 0;
-            int tmp = 0;
-            while(tmp < songList.size()){
-                if(songList.get(tmp).equals(addSong.name)){
-                    appearance++;
-                }
-                tmp++;
-            }
-
-            int checkAppearance = 0;
-            for(i=0;i<songList.size();i++){
-                if(songList.get(i).equals(addSong.name)){
-                    checkAppearance++;
-                    if(checkAppearance == appearance) {
-                        listView.getSelectionModel().select(i);
-                        break;
-                    }
-                }
-            }
-            flag=1;
-        }else{
-
+        //if the song already exists, pop alert screen
+        /*if(a) {
             Alert alert = new Alert(AlertType.INFORMATION);
             alert.setTitle("Error");
             alert.setHeaderText(null);
             alert.setContentText("This song is already in your library!");
-
             alert.showAndWait();
             return;
+        }*/
+
+        // add the song name to the song list, add the song to the detailed list
+        songList.add(addSong.name);
+        detailList.add(addSong);
+
+        // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
+        System.out.println();
+        System.out.println("After adding the new song");
+        System.out.println("detailList is: ");
+        for(int i=0;i<detailList.size();i++){
+            System.out.println(detailList.get(i).name);
         }
+        System.out.println("songList is: ");
+        for(int i=0;i<detailList.size();i++){
+            System.out.println(songList.get(i));
+        }
+
+        // Clear the input fields after song is added
+        nameInput.clear();
+        artistInput.clear();
+        albumInput.clear();
+        yearInput.clear();
+
+        // Sort the song list
+        Collections.sort(songList);
+
+        // Write songList to a file
+        PrintWriter w = new PrintWriter("src/view/songListFile.txt");
+        int i = 0;
+        while(i < songList.size()){
+            w.println(songList.get(i));
+            i++;
+        }
+        w.close();
+
+        // Write detailList to a file
+        FileOutputStream fos = new FileOutputStream("src/view/detailListFile.tmp");
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        oos.writeObject(detailList);
+        oos.close();
+
+        // Select the newly added song
+        // Find the last appearance of the song name (in the case of adding song with same song name)
+        int appearance = 0;
+        int tmp = 0;
+        while(tmp < songList.size()){
+            if(songList.get(tmp).equals(addSong.name)){
+                appearance++;
+            }
+            tmp++;
+        }
+
+        int checkAppearance = 0;
+        for(i=0;i<songList.size();i++){
+            if(songList.get(i).equals(addSong.name)){
+                checkAppearance++;
+                if(checkAppearance == appearance) {
+                    listView.getSelectionModel().select(i);
+                    break;
+                }
+            }
+        }
+        flag=1;
+
     }
 
     @FXML
@@ -246,6 +281,17 @@ public class Controller implements Serializable {
             j++;
         }
 
+        // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
+        System.out.println();
+        System.out.println("detailList is: ");
+        for(int i=0;i<detailList.size();i++){
+            System.out.println(detailList.get(i).name);
+        }
+        System.out.println("songList is: ");
+        for(int i=0;i<detailList.size();i++){
+            System.out.println(songList.get(i));
+        }
+
         // Sort the song list
         Collections.sort(songList);
 
@@ -263,6 +309,7 @@ public class Controller implements Serializable {
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         oos.writeObject(detailList);
         oos.close();
+
         // Clear the tableView if songList is empty
         if(songList.size() == 0){
             ObservableList<Song> emptyList = FXCollections.emptyObservableList();
@@ -311,7 +358,6 @@ public class Controller implements Serializable {
                     alert.setTitle("Error");
                     alert.setHeaderText(null);
                     alert.setContentText("The song from the same artist is already in your library!");
-
                     alert.showAndWait();
                     return;
                 }else{
@@ -361,14 +407,12 @@ public class Controller implements Serializable {
                 alert.setTitle("Error");
                 alert.setHeaderText(null);
                 alert.setContentText("Year has to be a number!");
-
                 alert.showAndWait();
                 return;
             }
         }
 
         previous=detailList.get(detailListIndex);
-
 
         // If name entered by user is not empty, then replace with new name
         // else leave name as it is
@@ -382,19 +426,19 @@ public class Controller implements Serializable {
             if(editSong.equals(detailList.get(i).name)){
                 checkAppearance++;
                 if(checkAppearance == appearance) {
-                    if (!nameInput.getText().equals("")) {
+                    if ( ! nameInput.getText().equals("")) {
                         detailList.get(i).setName(nameInput.getText());
                         edited.setName(nameInput.getText());
                     }
-                    if (!albumInput.getText().equals("")) {
+                    if ( ! albumInput.getText().equals("")) {
                         detailList.get(i).setAlbum(albumInput.getText());
                         edited.setAlbum(albumInput.getText());
                     }
-                    if (!artistInput.getText().equals("")) {
+                    if ( ! artistInput.getText().equals("")) {
                         detailList.get(i).setArtist(artistInput.getText());
                         edited.setArtist(artistInput.getText());
                     }
-                    if (!yearInput.getText().equals("")) {
+                    if ( ! yearInput.getText().equals("")) {
                         detailList.get(i).setYear(yearInput.getText());
                         edited.setYear(yearInput.getText());
                     }
@@ -402,6 +446,17 @@ public class Controller implements Serializable {
                 }
             }
             i++;
+        }
+
+        // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
+        System.out.println();
+        System.out.println("detailList is: ");
+        for(i=0;i<detailList.size();i++){
+            System.out.println(detailList.get(i).name);
+        }
+        System.out.println("songList is: ");
+        for(i=0;i<detailList.size();i++){
+            System.out.println(songList.get(i));
         }
 
         // Sort the list
@@ -451,12 +506,13 @@ public class Controller implements Serializable {
             }
         }*/
 
+        /*
         System.out.println(listView.getSelectionModel().selectedItemProperty().getValue());
         String value = listView.getSelectionModel().selectedItemProperty().getValue();
         listView.getSelectionModel().select(0);
         System.out.println("after selecting index 0, value is " + listView.getSelectionModel().selectedItemProperty().getValue());
         listView.getSelectionModel().select(value);
-        System.out.println("now select edited item, value is " + listView.getSelectionModel().selectedItemProperty().getValue());
+        System.out.println("now select edited item, value is " + listView.getSelectionModel().selectedItemProperty().getValue());*/
     }
 
     @FXML //cancel function, Dennis//
@@ -518,6 +574,7 @@ public class Controller implements Serializable {
             artistInput.clear();
             albumInput.clear();
             yearInput.clear();
+
         }else if(flag==3){ //cancel edit//
             int i=0;
             while(i<detailList.size()){

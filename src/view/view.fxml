@@ -47,12 +47,12 @@
         </children>
     </AnchorPane>
     <Button layoutX="22.0" layoutY="531.0" mnemonicParsing="false" onAction="#onDeleteButtonClicked" prefHeight="49.0" prefWidth="195.0" text="Delete selected song" AnchorPane.bottomAnchor="20.0" />
-    <TableView fx:id="tableView" layoutX="237.0" layoutY="77.0" prefHeight="84.0" prefWidth="533.0">
+    <TableView fx:id="tableView" layoutX="237.0" layoutY="77.0" prefHeight="57.0" prefWidth="533.0">
         <columns>
-            <TableColumn fx:id="nameColumn" prefWidth="186.0" resizable="false" text="Name" />
-            <TableColumn fx:id="artistColumn" prefWidth="131.0" resizable="false" text="Artist" />
-            <TableColumn fx:id="albumColumn" prefWidth="129.0" resizable="false" text="Album" />
-            <TableColumn fx:id="yearColumn" prefWidth="86.0" resizable="false" text="Year" />
+            <TableColumn fx:id="nameColumn" editable="false" prefWidth="165.0" resizable="false" sortable="false" text="Name" />
+            <TableColumn fx:id="artistColumn" editable="false" prefWidth="163.0" resizable="false" sortable="false" text="Artist" />
+            <TableColumn fx:id="albumColumn" editable="false" prefWidth="122.0" resizable="false" sortable="false" text="Album" />
+            <TableColumn fx:id="yearColumn" editable="false" minWidth="0.0" prefWidth="79.0" resizable="false" sortable="false" text="Year" />
         </columns>
     </TableView>
     <MeshView />
