@@ -1,15 +1,18 @@
+/*Created by Lianyan Ding & Tien-Hsueh Li*/
 package view;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.Alert.*;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.control.cell.TextFieldListCell;
 import javafx.stage.Stage;
+
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Scanner;
 
 public class Controller implements Serializable {
 
@@ -75,17 +78,6 @@ public class Controller implements Serializable {
             ois.close();
         }
 
-        // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
-        System.out.println();
-        System.out.println("detailList is: ");
-        for(int i=0;i<detailList.size();i++){
-            System.out.println(detailList.get(i).name);
-        }
-        System.out.println("songList is: ");
-        for(int i=0;i<detailList.size();i++){
-            System.out.println(songList.get(i));
-        }
-
         // set listener for the items
         listView.getSelectionModel().selectedItemProperty().addListener(((observable) -> displaySongDetail()));
 
@@ -111,9 +103,9 @@ public class Controller implements Serializable {
             tmp++;
         }
 
-        displayList = FXCollections.observableArrayList();//todo==========================
-        int checkAppearance = 0;
+        displayList = FXCollections.observableArrayList();
 
+        int checkAppearance = 0;
         int i = 0;
         while( i< detailList.size() ){
             String name = detailList.get(i).name;
@@ -132,17 +124,19 @@ public class Controller implements Serializable {
     @FXML
     private void onAddButtonClicked() throws IOException {
 
+        int i;
         // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
         System.out.println();
-        System.out.println("Before adding the new song");
+        System.out.println("before");
         System.out.println("detailList is: ");
-        for(int i=0;i<detailList.size();i++){
+        for(i=0;i<detailList.size();i++){
             System.out.println(detailList.get(i).name);
         }
         System.out.println("songList is: ");
-        for(int i=0;i<detailList.size();i++){
+        for(i=0;i<detailList.size();i++){
             System.out.println(songList.get(i));
         }
+
 
         Song addSong = new Song();
         addSong.setName(nameInput.getText());
@@ -150,10 +144,7 @@ public class Controller implements Serializable {
         addSong.setAlbum(albumInput.getText());
         addSong.setYear(yearInput.getText());
 
-        previous.setName(nameInput.getText());//save the song that is being added, used for cancel later//
-        previous.setArtist(artistInput.getText());
-        previous.setAlbum(albumInput.getText());
-        previous.setYear(yearInput.getText());
+        previous = addSong;
 
         for(int a=0; a<yearInput.getText().length();a++){
             if(!Character.isDigit(yearInput.getText().charAt(a))){
@@ -161,7 +152,6 @@ public class Controller implements Serializable {
                 alert.setTitle("Error");
                 alert.setHeaderText(null);
                 alert.setContentText("Year has to be a number!");
-
                 alert.showAndWait();
                 return;
             }
@@ -179,40 +169,36 @@ public class Controller implements Serializable {
 
 
         //check if this song already exists
-        boolean a = false;
         int j = 0;
         while(j < detailList.size()){
-            if(detailList.get(j).name.equals(nameInput.getText()) && detailList.get(j).getArtist().equals(artistInput.getText())){
-                a = true;
+            if(detailList.get(j).getName().equals(addSong.getName()) && detailList.get(j).getArtist().equals(addSong.getArtist())){
+                Alert alert = new Alert(AlertType.INFORMATION);
+                alert.setTitle("Error");
+                alert.setHeaderText(null);
+                alert.setContentText("This song is already in your library!");
+                alert.showAndWait();
+                return;
             }
             j++;
         }
-
-        //if the song already exists, pop alert screen
-        /*if(a) {
-            Alert alert = new Alert(AlertType.INFORMATION);
-            alert.setTitle("Error");
-            alert.setHeaderText(null);
-            alert.setContentText("This song is already in your library!");
-            alert.showAndWait();
-            return;
-        }*/
 
         // add the song name to the song list, add the song to the detailed list
         songList.add(addSong.name);
         detailList.add(addSong);
 
+
         // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
         System.out.println();
-        System.out.println("After adding the new song");
+        System.out.println("after add");
         System.out.println("detailList is: ");
-        for(int i=0;i<detailList.size();i++){
+        for(i=0;i<detailList.size();i++){
             System.out.println(detailList.get(i).name);
         }
         System.out.println("songList is: ");
-        for(int i=0;i<detailList.size();i++){
+        for(i=0;i<detailList.size();i++){
             System.out.println(songList.get(i));
         }
+
 
         // Clear the input fields after song is added
         nameInput.clear();
@@ -225,7 +211,7 @@ public class Controller implements Serializable {
 
         // Write songList to a file
         PrintWriter w = new PrintWriter("src/view/songListFile.txt");
-        int i = 0;
+        i = 0;
         while(i < songList.size()){
             w.println(songList.get(i));
             i++;
@@ -259,8 +245,8 @@ public class Controller implements Serializable {
                 }
             }
         }
-        flag=1;
 
+        flag=1;
     }
 
     @FXML
@@ -268,28 +254,36 @@ public class Controller implements Serializable {
 
         String removeSong = listView.getSelectionModel().selectedItemProperty().getValue();
 
-        // Remove the song name from songList
-        songList.remove(removeSong);
-
-        // Remove the song object from detailList
-        int j = 0;
-        while(j < detailList.size()){
-            if(detailList.get(j).name.equals(removeSong)){
-                previous=detailList.get(j);
-                detailList.remove(detailList.get(j));
+        // Get the number of appearance for the song in the listView
+        int index = listView.getSelectionModel().getSelectedIndex();
+        int appearance = 0;
+        int tmp = 0;
+        while(tmp <= index){
+            if(listView.getItems().get(tmp).equals(removeSong)){
+                appearance++;
             }
-            j++;
+            tmp++;
         }
 
-        // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
-        System.out.println();
-        System.out.println("detailList is: ");
-        for(int i=0;i<detailList.size();i++){
-            System.out.println(detailList.get(i).name);
+        displayList = FXCollections.observableArrayList();
+        int checkAppearance = 0;
+        int i = 0;
+        while( i< detailList.size() ){
+            String name = detailList.get(i).name;
+
+            if(name.equals(removeSong)){
+                checkAppearance++;
+                if(checkAppearance == appearance) {
+                    previous = detailList.get(i);
+                    detailList.remove(i);
+                }
+            }
+            i++;
         }
-        System.out.println("songList is: ");
-        for(int i=0;i<detailList.size();i++){
-            System.out.println(songList.get(i));
+
+        // Remove the song name from songList
+        if(index != -1) {
+            songList.remove(index);
         }
 
         // Sort the song list
@@ -297,7 +291,7 @@ public class Controller implements Serializable {
 
         // Write the songList to the file after deletion
         PrintWriter w = new PrintWriter("src/view/songListFile.txt");
-        int i = 0;
+        i = 0;
         while(i < songList.size()){
             w.println(songList.get(i));
             i++;
@@ -321,7 +315,9 @@ public class Controller implements Serializable {
 
     @FXML
     private void onEditButtonClicked() throws IOException {
-        String editSong = listView.getSelectionModel().selectedItemProperty().getValue();
+
+
+        String editSong = listView.getSelectionModel().getSelectedItem();
 
         // Get the number of appearance for the song in the listView
         int index = listView.getSelectionModel().getSelectedIndex();
@@ -334,22 +330,22 @@ public class Controller implements Serializable {
             tmp++;
         }
 
-        displayList = FXCollections.observableArrayList();
-        int checkAppearance = 0;
 
         int count = 0;
         int detailListIndex=0;
-        while(count<appearance){
-            if(listView.getSelectionModel().selectedItemProperty().getValue().equals(detailList.get(detailListIndex).getName())){
+        while(detailListIndex < detailList.size()){
+            if(editSong.equals(detailList.get(detailListIndex).getName())){
                 count++;
+                if(count == appearance){
+                    break;
+                }
             }
             detailListIndex++;
         }
-        detailListIndex--;
 
 
-        //checking if there is already a song with same name and artist//
-        if(!nameInput.getText().isEmpty()&&!artistInput.getText().isEmpty()){//both not empty//
+        //checking if there is already a song with same name and artist
+        if(!nameInput.getText().isEmpty()&&!artistInput.getText().isEmpty()){//both not empty
 
             count=0;
             while(count<detailList.size()){
@@ -365,7 +361,7 @@ public class Controller implements Serializable {
                 }
             }
 
-        }else if(nameInput.getText().isEmpty()&&!artistInput.getText().isEmpty()){//name empty, artist not empty//
+        }else if(nameInput.getText().isEmpty()&&!artistInput.getText().isEmpty()){//name empty, artist not empty
 
             count=0;
             while(count<detailList.size()){
@@ -381,7 +377,7 @@ public class Controller implements Serializable {
                     count++;
                 }
             }
-        }else if(!nameInput.getText().isEmpty()&&artistInput.getText().isEmpty()){//name not empty, artist empty//
+        }else if(!nameInput.getText().isEmpty()&&artistInput.getText().isEmpty()){//name not empty, artist empty
 
             count=0;
             String artist = detailList.get(detailListIndex).getArtist();
@@ -412,44 +408,40 @@ public class Controller implements Serializable {
             }
         }
 
-        previous=detailList.get(detailListIndex);
+        edited.setName(detailList.get(detailListIndex).getName());
+        edited.setArtist(detailList.get(detailListIndex).getArtist());
+        edited.setAlbum(detailList.get(detailListIndex).getAlbum());
+        edited.setYear(detailList.get(detailListIndex).getYear());
+
+        previous.setName(detailList.get(detailListIndex).getName());
+        previous.setArtist(detailList.get(detailListIndex).getArtist());
+        previous.setAlbum(detailList.get(detailListIndex).getAlbum());
+        previous.setYear(detailList.get(detailListIndex).getYear());
 
         // If name entered by user is not empty, then replace with new name
         // else leave name as it is
-        if(! nameInput.getText().equals("")) {
+        if(! nameInput.getText().isEmpty()) {
             songList.set(index, nameInput.getText());
         }
 
         // Set the property to new value if not empty
-        int i = 0;
-        while(i < detailList.size()){
-            if(editSong.equals(detailList.get(i).name)){
-                checkAppearance++;
-                if(checkAppearance == appearance) {
-                    if ( ! nameInput.getText().equals("")) {
-                        detailList.get(i).setName(nameInput.getText());
-                        edited.setName(nameInput.getText());
-                    }
-                    if ( ! albumInput.getText().equals("")) {
-                        detailList.get(i).setAlbum(albumInput.getText());
-                        edited.setAlbum(albumInput.getText());
-                    }
-                    if ( ! artistInput.getText().equals("")) {
-                        detailList.get(i).setArtist(artistInput.getText());
-                        edited.setArtist(artistInput.getText());
-                    }
-                    if ( ! yearInput.getText().equals("")) {
-                        detailList.get(i).setYear(yearInput.getText());
-                        edited.setYear(yearInput.getText());
-                    }
-                    break;
-                }
-            }
-            i++;
+        if ( ! nameInput.getText().isEmpty()) {
+            edited.setName(nameInput.getText());
+        }
+        if ( ! albumInput.getText().isEmpty()) {
+            edited.setAlbum(albumInput.getText());
+        }
+        if ( ! artistInput.getText().isEmpty()) {
+            edited.setArtist(artistInput.getText());
+        }
+        if ( ! yearInput.getText().isEmpty()) {
+            edited.setYear(yearInput.getText());
         }
 
+        int i;
         // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
         System.out.println();
+        System.out.println("before");
         System.out.println("detailList is: ");
         for(i=0;i<detailList.size();i++){
             System.out.println(detailList.get(i).name);
@@ -458,6 +450,24 @@ public class Controller implements Serializable {
         for(i=0;i<detailList.size();i++){
             System.out.println(songList.get(i));
         }
+
+
+        detailList.remove(detailListIndex);
+        detailList.add(edited);
+
+
+        // TODO PRINT OUT THE LISTS FOR DEBUGGING==========================================
+        System.out.println();
+        System.out.println("after");
+        System.out.println("detailList is: ");
+        for(i=0;i<detailList.size();i++){
+            System.out.println(detailList.get(i).name);
+        }
+        System.out.println("songList is: ");
+        for(i=0;i<detailList.size();i++){
+            System.out.println(songList.get(i));
+        }
+
 
         // Sort the list
         Collections.sort(songList);
@@ -484,35 +494,6 @@ public class Controller implements Serializable {
         yearInput.clear();
 
         flag=3;
-
-        // Select the newly edited item
-        /*int appearance = 0;
-        int tmp = 0;
-        while(tmp < songList.size()){
-            if(songList.get(tmp).equals(addSong.name)){
-                appearance++;
-            }
-            tmp++;
-        }
-
-        int checkAppearance = 0;
-        for(i=0;i<songList.size();i++){
-            if(songList.get(i).equals(addSong.name)){
-                checkAppearance++;
-                if(checkAppearance == appearance) {
-                    listView.getSelectionModel().select(i);
-                    break;
-                }
-            }
-        }*/
-
-        /*
-        System.out.println(listView.getSelectionModel().selectedItemProperty().getValue());
-        String value = listView.getSelectionModel().selectedItemProperty().getValue();
-        listView.getSelectionModel().select(0);
-        System.out.println("after selecting index 0, value is " + listView.getSelectionModel().selectedItemProperty().getValue());
-        listView.getSelectionModel().select(value);
-        System.out.println("now select edited item, value is " + listView.getSelectionModel().selectedItemProperty().getValue());*/
     }
 
     @FXML //cancel function, Dennis//
@@ -524,7 +505,9 @@ public class Controller implements Serializable {
                 if(detailList.get(i).getName().equals(previous.getName())&&detailList.get(i).getArtist().equals(previous.getArtist())){
                     detailList.remove(i);
                     songList.remove(previous.getName());
+
                     Collections.sort(songList);
+
                     // Write the list to the file after deletion
                     PrintWriter w = new PrintWriter("src/view/songListFile.txt");
                     i = 0;
@@ -552,7 +535,41 @@ public class Controller implements Serializable {
         }else if(flag==2){ //cancel delete//
             songList.add(previous.getName());
             detailList.add(previous);
+
+            int count = 0;
+            int appearance = 0;
+            while(count<detailList.size()){
+                if(detailList.get(count).getName().equals(previous.getName())&&detailList.get(count).getArtist().equals(previous.getArtist())){
+                    appearance++;
+                    break;
+                }else if(detailList.get(count).getName().equals(previous.getName())&&!detailList.get(count).getArtist().equals(previous.getArtist())){
+                    count++;
+                    appearance++;
+                }else {
+                    count++;
+                }
+            }
+
+            int index = 0;
+            count = 0;
+            while(count<appearance){
+                if(listView.getItems().get(index).equals(previous.getName())){
+                    count++;
+                    index++;
+                }else{
+                    index++;
+                }
+                if(count==appearance){
+                    index--;
+                    break;
+                }
+            }
+
+            listView.getSelectionModel().select(index);
+
+            // Sort the list
             Collections.sort(songList);
+
             // Write the list to the file after deletion
             PrintWriter w = new PrintWriter("src/view/songListFile.txt");
             int i;
@@ -579,11 +596,46 @@ public class Controller implements Serializable {
             int i=0;
             while(i<detailList.size()){
                 if(detailList.get(i).getName().equals(edited.getName())&&detailList.get(i).getArtist().equals(edited.getArtist())){
+
                     detailList.remove(i);
                     songList.remove(edited.getName());
                     detailList.add(previous);
                     songList.add(previous.getName());
+
+                    int count = 0;
+                    int appearance = 0;
+                    while(count<detailList.size()){
+                        if(detailList.get(count).getName().equals(previous.getName())&&detailList.get(count).getArtist().equals(previous.getArtist())){
+                            appearance++;
+                            break;
+                        }else if(detailList.get(count).getName().equals(previous.getName())&&!detailList.get(count).getArtist().equals(previous.getArtist())){
+                            count++;
+                            appearance++;
+                        }else {
+                            count++;
+                        }
+                    }
+
+                    int index = 0;
+                    count = 0;
+                    while(count<appearance){
+                        if(listView.getItems().get(index).equals(previous.getName())){
+                            count++;
+                            index++;
+                        }else{
+                            index++;
+                        }
+                        if(count==appearance){
+                            index--;
+                            break;
+                        }
+                    }
+
+                    listView.getSelectionModel().select(index);
+
+                    // Sort the list
                     Collections.sort(songList);
+
                     // Write the list to the file after deletion
                     PrintWriter w = new PrintWriter("src/view/songListFile.txt");
                     i = 0;
@@ -614,7 +666,6 @@ public class Controller implements Serializable {
             alert.setTitle("Error");
             alert.setHeaderText(null);
             alert.setContentText("You can only cancel once!");
-
             alert.showAndWait();
             return;
         }
@@ -626,5 +677,3 @@ public class Controller implements Serializable {
         flag=4;
     }
 }
-
-

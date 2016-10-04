@@ -2,9 +2,8 @@ package view;
 
 import java.io.Serializable;
 
-/**
- * Created by Lian on 9/27/16.
- */
+/*Created by Lianyan Ding & Tien-Hsueh Li*/
+
 public class Song implements Serializable{
 
     public String name, artist, album, year;

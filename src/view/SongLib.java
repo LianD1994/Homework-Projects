@@ -1,3 +1,5 @@
+/*Created by Lianyan Ding & Tien-Hsueh Li*/
+
 package view;
 
 import javafx.application.Application;
